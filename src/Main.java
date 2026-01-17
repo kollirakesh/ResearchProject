@@ -78,6 +78,47 @@ CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
             System.out.println("\nMin Array:");
             System.out.println(Arrays.toString(qi.minArray));
 
+             // 1. Workclass
+            CategoricalDGH workclassDGH = new WorkclassDGH();
+            System.out.println("\n=== Workclass DGH ===");
+            DGHTreePrinter.printTree(workclassDGH.getRoot());
+
+            // 2. Education
+            CategoricalDGH educationDGH = new EducationDGH();
+            System.out.println("\n=== Education DGH ===");
+            DGHTreePrinter.printTree(educationDGH.getRoot());
+
+            // 3. Marital-Status
+            CategoricalDGH maritalStatusDGH = new MaritalStatusDGH();
+            System.out.println("\n=== Marital-Status DGH ===");
+            DGHTreePrinter.printTree(maritalStatusDGH.getRoot());
+
+            // 4. Occupation
+            CategoricalDGH occupationDGH = new OccupationDGH();
+            System.out.println("\n=== Occupation DGH ===");
+            DGHTreePrinter.printTree(occupationDGH.getRoot());
+
+            // 5. Relationship
+            CategoricalDGH relationshipDGH = new RelationshipDGH();
+            System.out.println("\n=== Relationship DGH ===");
+            DGHTreePrinter.printTree(relationshipDGH.getRoot());
+
+            // 6. Native-Country
+            CategoricalDGH nativeCountryDGH = new NativeCountryDGH();
+            System.out.println("\n=== Native-Country DGH ===");
+            DGHTreePrinter.printTree(nativeCountryDGH.getRoot());
+
+            // 7. Race
+            CategoricalDGH raceDGH = new RaceDGH();
+            System.out.println("\n=== Race DGH ===");
+            DGHTreePrinter.printTree(raceDGH.getRoot());
+
+            // 8. Sex
+            CategoricalDGH sexDGH = new SexDGH();
+            System.out.println("\n=== Sex DGH ===");
+            DGHTreePrinter.printTree(sexDGH.getRoot());
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
