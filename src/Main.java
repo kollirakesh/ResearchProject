@@ -1,4 +1,7 @@
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Main {
 
@@ -34,10 +37,17 @@ public class Main {
             //     }
             // }
 
-            QIProcessor.QITableResult qi =
+                   QIProcessor.QITableResult qi =
                     QIProcessor.buildQITable(ds);
 
-            // Print QI table (first 20 rows)
+            // Compute distance
+            List<Integer> distanceCol =
+                    QIProcessor.computeDistanceColumn(qi);
+
+            // Append distance column
+            QIProcessor.appendDistanceColumn(qi, distanceCol);
+
+            // Print first 20 rows (QI + distance)
             for (String name : qi.qiColumnNames) {
                 System.out.print(name + "\t");
             }
@@ -49,6 +59,21 @@ public class Main {
                 }
                 System.out.println();
             }
+
+            // --------- CATEGORICAL UNIQUE VALUES ---------
+
+Map<String, Set<String>> uniqueCategorical =
+        CategoricalUniqueExtractor.extractUniqueCategoricalValues(
+                qi,
+                CategoricalQIMeta.CATEGORICAL_QI_COLUMNS
+        );
+
+CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
+
+
+
+
+
 
             System.out.println("\nMin Array:");
             System.out.println(Arrays.toString(qi.minArray));
