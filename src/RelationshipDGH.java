@@ -8,7 +8,7 @@ public class RelationshipDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Relationship");
-
+        registerParent(root, root);
         DGHNode spouse = new DGHNode("Spouse");
         DGHNode child = new DGHNode("Child");
         DGHNode otherFamily = new DGHNode("Other Family");

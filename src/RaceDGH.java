@@ -8,7 +8,7 @@ public class RaceDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Race");
-
+        registerParent(root, root);
         DGHNode white = new DGHNode("White");
         DGHNode black = new DGHNode("Black");
         DGHNode asian = new DGHNode("Asian");

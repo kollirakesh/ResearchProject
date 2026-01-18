@@ -8,7 +8,7 @@ public class SexDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Sex");
-
+        registerParent(root, root);
         DGHNode male = new DGHNode("Male");
         DGHNode female = new DGHNode("Female");
 

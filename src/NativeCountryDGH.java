@@ -8,7 +8,7 @@ public class NativeCountryDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Native-Country");
-
+        registerParent(root, root);
         // -------- Level 1 : Regions --------
         DGHNode northAmerica = new DGHNode("North America");
         DGHNode latinAmerica = new DGHNode("Latin America");

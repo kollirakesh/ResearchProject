@@ -9,7 +9,7 @@ public class EducationDGH extends CategoricalDGH {
 
         // Root
         root = new DGHNode("Education");
-
+        registerParent(root, root);
         // -------- Level 1 --------
         DGHNode school = new DGHNode("School Education");
         DGHNode undergrad = new DGHNode("Undergraduate/Diploma");
