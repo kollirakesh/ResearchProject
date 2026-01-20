@@ -8,7 +8,7 @@ public class NativeCountryDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Native-Country");
-        registerParent(root, root);
+      
         // -------- Level 1 : Regions --------
         DGHNode northAmerica = new DGHNode("North America");
         DGHNode latinAmerica = new DGHNode("Latin America");
@@ -22,16 +22,22 @@ public class NativeCountryDGH extends CategoricalDGH {
         root.addChild(asiaPacific);
         root.addChild(otherRegions);
 
+        registerParent(root, northAmerica);
+        registerParent(root, latinAmerica);
+        registerParent(root, europe);
+        registerParent(root, asiaPacific);
+        registerParent(root, otherRegions);
         // -------- North America --------
         DGHNode usa = new DGHNode("United-States");
         DGHNode canada = new DGHNode("Canada");
-
+      
         northAmerica.addChild(usa);
         northAmerica.addChild(canada);
+       
 
         registerParent(northAmerica, usa);
         registerParent(northAmerica, canada);
-
+        
         // -------- Latin America --------
         String[] latinCountries = {
                 "Mexico", "Puerto-Rico", "Cuba", "Jamaica", "Haiti",
@@ -50,7 +56,7 @@ public class NativeCountryDGH extends CategoricalDGH {
         String[] europeanCountries = {
                 "England", "Germany", "Ireland", "France", "Italy",
                 "Scotland", "Greece", "Poland", "Portugal",
-                "Hungary", "Yugoslavia"
+                "Hungary", "Yugoslavia", "Holand-Netherlands"
         };
 
         for (String c : europeanCountries) {

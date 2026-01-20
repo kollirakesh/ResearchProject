@@ -9,7 +9,7 @@ public class EducationDGH extends CategoricalDGH {
 
         // Root
         root = new DGHNode("Education");
-        registerParent(root, root);
+        
         // -------- Level 1 --------
         DGHNode school = new DGHNode("School Education");
         DGHNode undergrad = new DGHNode("Undergraduate/Diploma");
@@ -18,6 +18,10 @@ public class EducationDGH extends CategoricalDGH {
         root.addChild(school);
         root.addChild(undergrad);
         root.addChild(postgrad);
+
+        registerParent(root, school);
+        registerParent(root, undergrad);
+        registerParent(root, postgrad);
 
         // -------- School Education --------
         DGHNode primary = new DGHNode("Primary");
@@ -71,14 +75,17 @@ public class EducationDGH extends CategoricalDGH {
         DGHNode someCollege = new DGHNode("Some-college");
         DGHNode assocVoc = new DGHNode("Assoc-voc");
         DGHNode assocAcdm = new DGHNode("Assoc-acdm");
+        DGHNode bachelors = new DGHNode("Bachelors");
 
         undergrad.addChild(someCollege);
         undergrad.addChild(assocVoc);
         undergrad.addChild(assocAcdm);
+        undergrad.addChild(bachelors);
 
         registerParent(undergrad, someCollege);
         registerParent(undergrad, assocVoc);
         registerParent(undergrad, assocAcdm);
+        registerParent(undergrad, bachelors);
 
         // -------- Postgraduate --------
         DGHNode masters = new DGHNode("Masters");

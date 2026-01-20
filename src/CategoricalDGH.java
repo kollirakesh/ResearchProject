@@ -45,5 +45,9 @@ protected int height(DGHNode node) {
     return 1 + maxChildHeight;
 }
 
+public boolean isRoot(String value) {
+    return !parentMap.containsKey(value);
+}
+
 
 }

@@ -1,3 +1,7 @@
+import java.nio.file.Files;
+import static java.nio.file.Files.list;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +14,7 @@ public class Main {
 
         try {
             DataSet ds = DataLoader.loadAdultData("data/adult.csv");
-
+            System.out.println("Original dataset size:" + ds.rows.size());
             // System.out.println("Total Records: " + ds.rows.size());
             // System.out.println("Total Attributes: " + ds.columns.size());
             // System.out.println();
@@ -136,15 +140,7 @@ CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
             parentsMapList.add(relationshipDGH.getParentMap());
             rootsList.add(relationshipDGH.getRoot());
 
-            // 6. Native-Country
-            CategoricalDGH nativeCountryDGH = new NativeCountryDGH();
-            System.out.println("\n=== Native-Country DGH ===");
-            DGHTreePrinter.printTree(nativeCountryDGH.getRoot());
-            System.out.println(nativeCountryDGH.getHeight());
-            maxlevel = Math.max(maxlevel, nativeCountryDGH.getHeight());
-            parentsMapList.add(nativeCountryDGH.getParentMap());
-            rootsList.add(nativeCountryDGH.getRoot());
-
+            
             // 7. Race
             CategoricalDGH raceDGH = new RaceDGH();
             System.out.println("\n=== Race DGH ===");
@@ -163,11 +159,24 @@ CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
             parentsMapList.add(sexDGH.getParentMap());
             rootsList.add(sexDGH.getRoot());
 
+            // 6. Native-Country
+            CategoricalDGH nativeCountryDGH = new NativeCountryDGH();
+            System.out.println("\n=== Native-Country DGH ===");
+            DGHTreePrinter.printTree(nativeCountryDGH.getRoot());
+            System.out.println(nativeCountryDGH.getHeight());
+            maxlevel = Math.max(maxlevel, nativeCountryDGH.getHeight());
+            parentsMapList.add(nativeCountryDGH.getParentMap());
+            rootsList.add(nativeCountryDGH.getRoot());
+
+
             System.out.println("Max level: " + maxlevel);
-            
+            System.out.println("After preprocessing dataset size:" + qi.qiTable.size());
+            Path path = Paths.get("C:\\Users\\user\\Desktop\\ResearchProject\\data\\before.txt");
+            Files.write(path,qi.qiTable.stream().map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get()).toList());
             int n = qi.qiTable.size();
-            // Clusters.generateClusters(0, 0, parentsMapList, n, 0, maxlevel, qi.qiTable, rootsList, 5);
-            
+            Clusters.generateClusters(0, 0, parentsMapList, n, 0, maxlevel, qi.qiTable, rootsList, 5);
+            Path path1 = Paths.get("C:\\Users\\user\\Desktop\\ResearchProject\\data\\after.txt");
+            Files.write(path1,qi.qiTable.stream().map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get()).toList());
 
         } catch (Exception e) {
             e.printStackTrace();

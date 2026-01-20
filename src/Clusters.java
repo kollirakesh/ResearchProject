@@ -28,21 +28,22 @@ public class Clusters {
         generateClusters(j, 0, parentsMapList, n, level + 1, maxlevel, list, rootsList, k);
     }
 
-    private static List<HashSet<String>> getListOfUniqueValuesfromIEveryDomain(int i, List<List<Object>> list){
-        List<HashSet<String>> ls = new ArrayList<>();
+    private static List<HashSet<String>> getListOfUniqueValuesfromIEveryDomain(int i, List<List<Object>> list) {
+    List<HashSet<String>> ls = new ArrayList<>();
 
-        for(int p=0; p < list.get(i).size(); p++){
-            HashSet<String> hSet = new HashSet<>();
-            for(int q=i; q < list.size(); q++){
-                if(p != 0 && p != 8 && p != 10){
-                    String s = (String) (list.get(q).get(p));
-                    hSet.add(s);
-                }
-            }
-            ls.add(hSet);
+    for (int p = 0; p < list.get(i).size(); p++) {
+        if (p == 0 || p == 8 || p == 10) continue; // ⬅️ skip numeric columns
+
+        HashSet<String> hSet = new HashSet<>();
+        for (int q = i; q < list.size(); q++) {
+            String s = (String) list.get(q).get(p);
+            hSet.add(s);
         }
-        return ls;
+        ls.add(hSet);
     }
+    return ls;
+}
+
 
     private static List<String> lcaList(List<HashSet<String>> hSets, List<DGHNode> rootsList){
         List<String> ls = new ArrayList<>();
@@ -52,27 +53,40 @@ public class Clusters {
         return ls;
     }
     
-     private static String individualLca(HashSet<String> values, DGHNode respectiveRootNode) {
+     private static String individualLca(HashSet<String> values, DGHNode root) {
 
-        // At least one value is guaranteed
-        Iterator<String> iterator = values.iterator();
+    // fallback
+    if (values == null || values.isEmpty()) {
+        return root.value;
+    }
 
-        // Get first node and its ancestors
-        DGHNode firstNode = findNode(respectiveRootNode, iterator.next());
-        Set<DGHNode> commonAncestors = getAncestors(firstNode);
+    Iterator<String> it = values.iterator();
 
-        // Intersect ancestors for remaining values
-        while (iterator.hasNext()) {
-            DGHNode currentNode = findNode(respectiveRootNode, iterator.next());
-            Set<DGHNode> currentAncestors = getAncestors(currentNode);
-            commonAncestors.retainAll(currentAncestors);
+    DGHNode firstNode = findNode(root, it.next());
+    if (firstNode == null) {
+        return root.value;   // value not in DGH → generalize to root
+    }
+
+    Set<DGHNode> commonAncestors = getAncestors(firstNode);
+
+    while (it.hasNext()) {
+        DGHNode cur = findNode(root, it.next());
+
+        if (cur == null) {
+            return root.value; // missing node → safe generalization
         }
 
-        // Deepest common ancestor = LCA
-        DGHNode lcaNode = getDeepestNode(commonAncestors);
+        commonAncestors.retainAll(getAncestors(cur));
 
-        return lcaNode.value;
+        if (commonAncestors.isEmpty()) {
+            return root.value; // no common ancestor → root
+        }
     }
+
+    DGHNode lca = getDeepestNode(commonAncestors);
+    return (lca != null) ? lca.value : root.value;
+}
+
 
     // DFS search
     private static DGHNode findNode(DGHNode root, String value) {
@@ -129,19 +143,27 @@ public class Clusters {
         }
     }
 
-    private static void generalise(int i,List<List<Object>> list, List<Map<String, String>> parentsMapList){
-        
-        for(int tuple = i; tuple < list.size(); tuple++){
-            int cols = 0;
-            for(int rcell = 0; rcell < list.get(tuple).size(); rcell++){
-                if(rcell !=0 && rcell != 8 && rcell != 10){
-                    String key = (String)list.get(tuple).get(rcell);
-                    list.get(tuple).set(rcell, parentsMapList.get(cols).get(key));
-                    cols++;
+    private static void generalise(
+        int i,
+        List<List<Object>> list,
+        List<Map<String, String>> parentsMapList
+) {
+    for (int tuple = i; tuple < list.size(); tuple++) {
+        int cols = 0;
+        for (int rcell = 0; rcell < list.get(tuple).size(); rcell++) {
+            if (rcell != 0 && rcell != 8 && rcell != 10) {
+                String key = (String) list.get(tuple).get(rcell);
+                String parent = parentsMapList.get(cols).get(key);
+
+                if (parent != null) {
+                    list.get(tuple).set(rcell, parent);
                 }
+                cols++;
             }
         }
     }
+}
+
 
     private static HashMap<String, PriorityQueue<ArrayList<Integer>>> constructHashMap(int i, List<List<Object>> list){
         HashMap<String, PriorityQueue<ArrayList<Integer>>> map = new HashMap<>();
@@ -193,7 +215,9 @@ public class Clusters {
                 String key = hEntry.getKey();
                 PriorityQueue<ArrayList<Integer>> pq = hEntry.getValue();
                 int pqsize = pq.size();
-                while(pqsize >= k){
+                int rem = pqsize % k;
+                int normalCount = pqsize - rem;
+                while(normalCount > 0 && !pq.isEmpty()){
                     StringTokenizer str = new StringTokenizer(key);
                     ArrayList<Integer> al = pq.poll();
                     for(int p=0; p < list.get(temp1).size(); p++){
@@ -208,27 +232,21 @@ public class Clusters {
                         }
                     }
                     temp1++;
-                    pqsize--;
+                    normalCount--;
                 }
-                if(pqsize > 0){
-                    while(pqsize > 0){
-                    StringTokenizer str = new StringTokenizer(key);
-                    ArrayList<Integer> al = pq.poll();
-                    for(int p=0; p < list.get(temp2).size(); p++){
-                        if(p == 0){
-                            list.get(temp2).set(p, al.get(0));
-                        }else if(p == 8){
-                            list.get(temp2).set(p, al.get(1));
-                        }else if(p == 10){
-                            list.get(temp2).set(p, al.get(2));
-                        }else{
-                            list.get(temp2).set(p, str.nextToken());
-                        }
-                    }
-                    temp2++;
-                    pqsize--;
-                    }
-                }
+                while (!pq.isEmpty()) {
+    StringTokenizer str = new StringTokenizer(key);
+    ArrayList<Integer> al = pq.poll();
+
+    for (int p = 0; p < list.get(temp2).size(); p++) {
+        if (p == 0) list.get(temp2).set(p, al.get(0));
+        else if (p == 8) list.get(temp2).set(p, al.get(1));
+        else if (p == 10) list.get(temp2).set(p, al.get(2));
+        else list.get(temp2).set(p, str.nextToken());
+    }
+    temp2++;
+}
+
             }
     }
 

@@ -9,7 +9,7 @@ public class OccupationDGH extends CategoricalDGH {
 
         // Root
         root = new DGHNode("Occupation");
-        registerParent(root, root);
+       
         // -------- Level 1 --------
         DGHNode professional = new DGHNode("Professional");
         DGHNode technical = new DGHNode("Technical/Skilled");
@@ -22,7 +22,12 @@ public class OccupationDGH extends CategoricalDGH {
         root.addChild(service);
         root.addChild(manual);
         root.addChild(defense);
-
+         registerParent(root, professional);
+         registerParent(root, technical);
+         registerParent(root, service);
+         registerParent(root, manual);
+          registerParent(root, defense);
+         
         // -------- Professional --------
         DGHNode exec = new DGHNode("Exec-managerial");
         DGHNode profSpec = new DGHNode("Prof-specialty");

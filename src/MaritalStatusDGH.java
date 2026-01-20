@@ -9,7 +9,7 @@ public class MaritalStatusDGH extends CategoricalDGH {
 
         // Root
         root = new DGHNode("Marital-Status");
-        registerParent(root, root);
+        
         // -------- Level 1 --------
         DGHNode neverMarried = new DGHNode("Never Married");
         DGHNode currentlyMarried = new DGHNode("Currently Married");
@@ -18,6 +18,11 @@ public class MaritalStatusDGH extends CategoricalDGH {
         root.addChild(neverMarried);
         root.addChild(currentlyMarried);
         root.addChild(previouslyMarried);
+
+          registerParent(root, neverMarried);
+            registerParent(root, currentlyMarried);
+              registerParent(root, previouslyMarried);
+
 
         // -------- Never Married --------
         DGHNode never = new DGHNode("Never-married");

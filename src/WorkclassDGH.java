@@ -9,7 +9,7 @@ public class WorkclassDGH extends CategoricalDGH {
 
         // Root
         root = new DGHNode("Workclass");
-        registerParent(root, root);
+        // registerParent(root, root);
         // -------- Level 1 --------
         DGHNode government = new DGHNode("Government");
         DGHNode selfEmployed = new DGHNode("Self-Employed");
@@ -18,6 +18,11 @@ public class WorkclassDGH extends CategoricalDGH {
         root.addChild(government);
         root.addChild(selfEmployed);
         root.addChild(privateOther);
+
+        registerParent(root, government);
+        registerParent(root, selfEmployed);
+        registerParent(root, privateOther);
+
 
         // -------- Government --------
         DGHNode federal = new DGHNode("Federal-gov");

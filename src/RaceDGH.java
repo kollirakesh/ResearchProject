@@ -8,24 +8,24 @@ public class RaceDGH extends CategoricalDGH {
     protected void buildHierarchy() {
 
         root = new DGHNode("Race");
-        registerParent(root, root);
+       
         DGHNode white = new DGHNode("White");
         DGHNode black = new DGHNode("Black");
-        DGHNode asian = new DGHNode("Asian");
+        DGHNode asian = new DGHNode("Asian-Pac-Islander");
+        DGHNode amerIndian = new DGHNode("Amer-Indian-Eskimo");
         DGHNode other = new DGHNode("Other");
 
         root.addChild(white);
         root.addChild(black);
         root.addChild(asian);
+        root.addChild(amerIndian);
         root.addChild(other);
-
-        DGHNode asianPac = new DGHNode("Asian-Pac-Islander");
-        asian.addChild(asianPac);
-
-        DGHNode amerIndian = new DGHNode("Amer-Indian-Eskimo");
-        other.addChild(amerIndian);
-
-        registerParent(asian, asianPac);
-        registerParent(other, amerIndian);
+        
+         registerParent(root, white);
+          registerParent(root, black);
+           registerParent(root, asian);
+           registerParent(root, amerIndian);
+            registerParent(root, other);
+        
     }
 }
