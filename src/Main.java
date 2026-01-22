@@ -82,7 +82,8 @@ public class Main {
             parentsMapList.add(countryDGH.getParentMap());
             rootsList.add(countryDGH.getRoot());
             maxlevel = Math.max(maxlevel, countryDGH.getHeight());
-
+            
+            System.out.println("Max DGH level: " + maxlevel);
             // ---------------- BEFORE FILE ----------------
             Path before = Paths.get("C:/Users/user/Desktop/ResearchProject/data/before.txt");
             Files.write(
