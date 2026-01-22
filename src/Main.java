@@ -1,5 +1,4 @@
 import java.nio.file.Files;
-import static java.nio.file.Files.list;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -10,178 +9,151 @@ import java.util.Set;
 
 public class Main {
 
+    // ✅ QI column indices (must match qi.qiTable order)
+    static final int AGE_COL = 0;
+    static final int HOURS_COL = 8;
+
     public static void main(String[] args) {
 
         try {
             DataSet ds = DataLoader.loadAdultData("data/adult.csv");
-            System.out.println("Original dataset size:" + ds.rows.size());
-            // System.out.println("Total Records: " + ds.rows.size());
-            // System.out.println("Total Attributes: " + ds.columns.size());
-            // System.out.println();
+            System.out.println("Original dataset size: " + ds.rows.size());
 
-            // // Print header
-            // for (ColumnMeta col : ds.columns) {
-            //     System.out.print(col.name + "\t");
-            // }
-            // System.out.println();
+            // ---------------- QI TABLE ----------------
+            QIProcessor.QITableResult qi = QIProcessor.buildQITable(ds);
 
-            // // Print first 20 records
-            // int limit = Math.min(20, ds.rows.size());
-
-            // for (int i = 0; i < limit; i++) {
-            //     for (Object value : ds.rows.get(i)) {
-            //         System.out.print(value + "\t");
-            //     }
-            //     System.out.println();
-            // }
-
-            // System.out.println("\nQuasi-Identifier Attributes:");
-            // for (ColumnMeta col : ds.columns) {
-            //     if (col.isQuasiIdentifier) {
-            //         System.out.println("- " + col.name);
-            //     }
-            // }
-
-                   QIProcessor.QITableResult qi =
-                    QIProcessor.buildQITable(ds);
-
-            // Compute distance
-            List<Integer> distanceCol =
-                    QIProcessor.computeDistanceColumn(qi);
-
-            // Append distance column
+            List<Integer> distanceCol = QIProcessor.computeDistanceColumn(qi);
             QIProcessor.appendDistanceColumn(qi, distanceCol);
 
-            // Print first 20 rows (QI + distance)
-            for (String name : qi.qiColumnNames) {
-                System.out.print(name + "\t");
-            }
-            System.out.println();
+            // ---------------- UNIQUE CATEGORICAL ----------------
+            Map<String, Set<String>> uniqueCategorical =
+                    CategoricalUniqueExtractor.extractUniqueCategoricalValues(
+                            qi,
+                            CategoricalQIMeta.CATEGORICAL_QI_COLUMNS
+                    );
 
-            for (int i = 0; i < 20; i++) {
-                for (Object val : qi.qiTable.get(i)) {
-                    System.out.print(val + "\t");
-                }
-                System.out.println();
-            }
+            CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
 
-            // --------- CATEGORICAL UNIQUE VALUES ---------
-
-Map<String, Set<String>> uniqueCategorical =
-        CategoricalUniqueExtractor.extractUniqueCategoricalValues(
-                qi,
-                CategoricalQIMeta.CATEGORICAL_QI_COLUMNS
-        );
-
-CategoricalUniqueExtractor.printUniqueCategoricalValues(uniqueCategorical);
-
-
-
-
-
-
-            System.out.println("\nMin Array:");
-            System.out.println(Arrays.toString(qi.minArray));
-
-            //Initialize maxlevel
+                    System.out.println("\nMin Array:");
+                    System.out.println(Arrays.toString(qi.minArray));
+                    System.out.println("Max Array:");
+                    System.out.println(Arrays.toString(qi.maxArray));
+            // ---------------- DGH SETUP ----------------
             int maxlevel = 0;
-
-            //List of parentMaps of every categorical attribute
             List<Map<String, String>> parentsMapList = new ArrayList<>();
-
-            //List of roots of every DGH'S
             List<DGHNode> rootsList = new ArrayList<>();
-            
-             // 1. Workclass
+
             CategoricalDGH workclassDGH = new WorkclassDGH();
-            System.out.println("\n=== Workclass DGH ===");
-            DGHTreePrinter.printTree(workclassDGH.getRoot());
-            // for(Map.Entry<String,String> hEntry: workclassDGH.getParentMap().entrySet()){
-            //     System.out.println(hEntry.getKey()+" "+hEntry.getValue());
-            // }
-            System.out.println(workclassDGH.getHeight());
-            maxlevel = Math.max(maxlevel, workclassDGH.getHeight());
             parentsMapList.add(workclassDGH.getParentMap());
             rootsList.add(workclassDGH.getRoot());
+            maxlevel = Math.max(maxlevel, workclassDGH.getHeight());
 
-            // 2. Education
             CategoricalDGH educationDGH = new EducationDGH();
-            System.out.println("\n=== Education DGH ===");
-            DGHTreePrinter.printTree(educationDGH.getRoot());
-            System.out.println(educationDGH.getHeight()); 
-            maxlevel = Math.max(maxlevel, educationDGH.getHeight());
             parentsMapList.add(educationDGH.getParentMap());
             rootsList.add(educationDGH.getRoot());
+            maxlevel = Math.max(maxlevel, educationDGH.getHeight());
 
-            // 3. Marital-Status
-            CategoricalDGH maritalStatusDGH = new MaritalStatusDGH();
-            System.out.println("\n=== Marital-Status DGH ===");
-            DGHTreePrinter.printTree(maritalStatusDGH.getRoot());
-            System.out.println(maritalStatusDGH.getHeight());
-            maxlevel = Math.max(maxlevel, maritalStatusDGH.getHeight());
-            parentsMapList.add(maritalStatusDGH.getParentMap());
-            rootsList.add(maritalStatusDGH.getRoot());
+            CategoricalDGH maritalDGH = new MaritalStatusDGH();
+            parentsMapList.add(maritalDGH.getParentMap());
+            rootsList.add(maritalDGH.getRoot());
+            maxlevel = Math.max(maxlevel, maritalDGH.getHeight());
 
-            // 4. Occupation
             CategoricalDGH occupationDGH = new OccupationDGH();
-            System.out.println("\n=== Occupation DGH ===");
-            DGHTreePrinter.printTree(occupationDGH.getRoot());
-            System.out.println(occupationDGH.getHeight());
-            maxlevel = Math.max(maxlevel, occupationDGH.getHeight());
             parentsMapList.add(occupationDGH.getParentMap());
             rootsList.add(occupationDGH.getRoot());
+            maxlevel = Math.max(maxlevel, occupationDGH.getHeight());
 
-            // 5. Relationship
             CategoricalDGH relationshipDGH = new RelationshipDGH();
-            System.out.println("\n=== Relationship DGH ===");
-            DGHTreePrinter.printTree(relationshipDGH.getRoot());
-            System.out.println(relationshipDGH.getHeight());
-            maxlevel = Math.max(maxlevel, relationshipDGH.getHeight());
             parentsMapList.add(relationshipDGH.getParentMap());
             rootsList.add(relationshipDGH.getRoot());
+            maxlevel = Math.max(maxlevel, relationshipDGH.getHeight());
 
-            
-            // 7. Race
             CategoricalDGH raceDGH = new RaceDGH();
-            System.out.println("\n=== Race DGH ===");
-            DGHTreePrinter.printTree(raceDGH.getRoot());
-            System.out.println(raceDGH.getHeight());
-            maxlevel = Math.max(maxlevel, raceDGH.getHeight());
             parentsMapList.add(raceDGH.getParentMap());
             rootsList.add(raceDGH.getRoot());
+            maxlevel = Math.max(maxlevel, raceDGH.getHeight());
 
-            // 8. Sex
             CategoricalDGH sexDGH = new SexDGH();
-            System.out.println("\n=== Sex DGH ===");
-            DGHTreePrinter.printTree(sexDGH.getRoot());
-            System.out.println(sexDGH.getHeight());
-            maxlevel = Math.max(maxlevel, sexDGH.getHeight());
             parentsMapList.add(sexDGH.getParentMap());
             rootsList.add(sexDGH.getRoot());
+            maxlevel = Math.max(maxlevel, sexDGH.getHeight());
 
-            // 6. Native-Country
-            CategoricalDGH nativeCountryDGH = new NativeCountryDGH();
-            System.out.println("\n=== Native-Country DGH ===");
-            DGHTreePrinter.printTree(nativeCountryDGH.getRoot());
-            System.out.println(nativeCountryDGH.getHeight());
-            maxlevel = Math.max(maxlevel, nativeCountryDGH.getHeight());
-            parentsMapList.add(nativeCountryDGH.getParentMap());
-            rootsList.add(nativeCountryDGH.getRoot());
+            CategoricalDGH countryDGH = new NativeCountryDGH();
+            parentsMapList.add(countryDGH.getParentMap());
+            rootsList.add(countryDGH.getRoot());
+            maxlevel = Math.max(maxlevel, countryDGH.getHeight());
 
+            // ---------------- BEFORE FILE ----------------
+            Path before = Paths.get("C:/Users/user/Desktop/ResearchProject/data/before.txt");
+            Files.write(
+                    before,
+                    qi.qiTable.stream()
+                            .map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get())
+                            .toList()
+            );
 
-            System.out.println("Max level: " + maxlevel);
-            System.out.println("After preprocessing dataset size:" + qi.qiTable.size());
-            Path path = Paths.get("C:\\Users\\user\\Desktop\\ResearchProject\\data\\before.txt");
-            Files.write(path,qi.qiTable.stream().map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get()).toList());
-            int n = qi.qiTable.size();
-            Clusters.generateClusters(0, 0, parentsMapList, n, 0, maxlevel, qi.qiTable, rootsList, 5);
-            Path path1 = Paths.get("C:\\Users\\user\\Desktop\\ResearchProject\\data\\after.txt");
-            Files.write(path1,qi.qiTable.stream().map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get()).toList());
+            // ---------------- CLUSTERING ----------------
+            int k = 20;
+            Clusters.generateClusters(
+                    0, 0,
+                    parentsMapList,
+                    qi.qiTable.size(),
+                    0,
+                    maxlevel,
+                    qi.qiTable,
+                    rootsList,
+                    k
+            );
+
+            // ---------------- NUMERICAL GENERALIZATION ----------------
+            Clusters.generalizeNumericalAttributes(qi.qiTable, k);
+
+            // ---------------- INFORMATION LOSS ----------------
+            double numLoss = Clusters.numericalInformationLoss(
+                    qi.qiTable, k,
+                    qi.minArray[AGE_COL], qi.maxArray[AGE_COL],
+                    qi.minArray[HOURS_COL], qi.maxArray[HOURS_COL]
+            );
+
+            double catLoss = Clusters.categoricalInformationLoss(qi.qiTable, rootsList);
+            double totalLoss = Clusters.totalInformationLoss(numLoss, catLoss);
+
+            System.out.println("\nNumerical Loss  = " + numLoss);
+            System.out.println("Categorical Loss = " + catLoss);
+            System.out.println("Total Loss = " + totalLoss);
+
+            // ---------------- CLEANUP ----------------
+            Clusters.removeDistanceColumn(qi.qiTable);
+
+            // ---------------- AFTER FILE ----------------
+            Path after = Paths.get("C:/Users/user/Desktop/ResearchProject/data/after.txt");
+            Files.write(
+                    after,
+                    qi.qiTable.stream()
+                            .map(r -> r.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).get())
+                            .toList()
+            );
+
+            // Print QI column names
+for (String colName : qi.qiColumnNames) {
+    System.out.print(colName + "\t");
+}
+System.out.println();
+
+// Print first 20 QI rows
+int limit = Math.min(20, qi.qiTable.size());
+
+for (int i = 0; i < limit; i++) {
+    for (Object val : qi.qiTable.get(i)) {
+        System.out.print(val + "\t");
+    }
+    System.out.println();
+}
+System.out.println("raw dataset size: " + ds.rows.size());
+System.out.println("\nProcessed QI table size: " + qi.qiTable.size());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-    
 }

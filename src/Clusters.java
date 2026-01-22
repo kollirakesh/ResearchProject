@@ -8,9 +8,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 public class Clusters {
+
+    static final int[] CAT_COLS = {1,2,3,4,5,6,7,9};
+    static final Set<Integer> NUM_COLS = Set.of(0,8,10);
+
+
+    // numeric columns in fixed positions
+static final int AGE_COL = 0;
+static final int HOURS_COL = 8;
+static final int DIST_COL = 10;
+
+// safe delimiter (never appears in Adult dataset)
+static final String DELIM = "\u0001";
+
     public static void generateClusters(int i, int j, List<Map<String, String>> parentsMapList, int n, int level, int maxlevel, List<List<Object>> list, List<DGHNode> rootsList, int k){
         if( (n-i) <= k || level == maxlevel){
             if(i < n){
@@ -31,16 +43,15 @@ public class Clusters {
     private static List<HashSet<String>> getListOfUniqueValuesfromIEveryDomain(int i, List<List<Object>> list) {
     List<HashSet<String>> ls = new ArrayList<>();
 
-    for (int p = 0; p < list.get(i).size(); p++) {
-        if (p == 0 || p == 8 || p == 10) continue; // ⬅️ skip numeric columns
-
-        HashSet<String> hSet = new HashSet<>();
-        for (int q = i; q < list.size(); q++) {
-            String s = (String) list.get(q).get(p);
-            hSet.add(s);
-        }
-        ls.add(hSet);
+    for (int c = 0; c < CAT_COLS.length; c++) {
+    int col = CAT_COLS[c];
+    HashSet<String> hSet = new HashSet<>();
+    for (int q = i; q < list.size(); q++) {
+        hSet.add((String) list.get(q).get(col));
     }
+    ls.add(hSet);
+}
+
     return ls;
 }
 
@@ -132,15 +143,12 @@ public class Clusters {
     }
 
     private static void generaliseWithLca(int i, List<List<Object>> list, List<String> lcaList){
-        for(int p=i; p < list.size(); p++){
-            int cols = 0;
-            for(int q = 0; q < list.get(p).size(); q++){
-                if(q != 0 && q != 8 && q != 10){
-                    list.get(p).set(q, lcaList.get(cols));
-                    cols++;
-                }
-            }
-        }
+        for (int p = i; p < list.size(); p++) {
+    for (int c = 0; c < CAT_COLS.length; c++) {
+        list.get(p).set(CAT_COLS[c], lcaList.get(c));
+    }
+}
+
     }
 
     private static void generalise(
@@ -149,48 +157,46 @@ public class Clusters {
         List<Map<String, String>> parentsMapList
 ) {
     for (int tuple = i; tuple < list.size(); tuple++) {
-        int cols = 0;
-        for (int rcell = 0; rcell < list.get(tuple).size(); rcell++) {
-            if (rcell != 0 && rcell != 8 && rcell != 10) {
-                String key = (String) list.get(tuple).get(rcell);
-                String parent = parentsMapList.get(cols).get(key);
+    for (int c = 0; c < CAT_COLS.length; c++) {
+        int colIndex = CAT_COLS[c];
+        String key = (String) list.get(tuple).get(colIndex);
+        String parent = parentsMapList.get(c).get(key);
 
-                if (parent != null) {
-                    list.get(tuple).set(rcell, parent);
-                }
-                cols++;
-            }
+        if (parent != null) {
+            list.get(tuple).set(colIndex, parent);
         }
     }
 }
 
+}
 
-    private static HashMap<String, PriorityQueue<ArrayList<Integer>>> constructHashMap(int i, List<List<Object>> list){
-        HashMap<String, PriorityQueue<ArrayList<Integer>>> map = new HashMap<>();
-        for(int p=i; p < list.size(); p++){
-            StringBuilder str = new StringBuilder();
-            ArrayList<Integer> al = new ArrayList<>();
-            for(int q = 0; q < list.get(p).size(); q++){
-                if(q != 0 && q != 8 && q != 10){
-                    String s = (String)(list.get(p).get(q));
-                    str.append(s);
-                    str.append(" ");
-                }else{
-                    al.add((int)(list.get(p).get(q)));
-                }
-            }
-                String key = str.toString();
-                if(map.containsKey(key)){
-                    map.get(key).add(new ArrayList<>(al));
-                }else{
-                    PriorityQueue<ArrayList<Integer>> pq = new PriorityQueue<>(Comparator.comparingInt(x -> x.get(x.size() - 1)));
-                    pq.add(new ArrayList<>(al));
-                    map.put(key, pq);
-                }
+
+    private static HashMap<String, PriorityQueue<ArrayList<Integer>>>
+constructHashMap(int i, List<List<Object>> list) {
+
+    HashMap<String, PriorityQueue<ArrayList<Integer>>> map = new HashMap<>();
+
+    for (int p = i; p < list.size(); p++) {
+
+        StringBuilder key = new StringBuilder();
+        ArrayList<Integer> nums = new ArrayList<>(3);
+
+        for (int c : CAT_COLS) {
+            key.append((String) list.get(p).get(c)).append(DELIM);
         }
-        return map;
+
+        nums.add((int) list.get(p).get(AGE_COL));
+        nums.add((int) list.get(p).get(HOURS_COL));
+        nums.add((int) list.get(p).get(DIST_COL));
+
+        map.computeIfAbsent(
+                key.toString(),
+                k -> new PriorityQueue<>(Comparator.comparingInt(a -> a.get(2)))
+        ).add(nums);
     }
-    
+    return map;
+}
+
     private static int getJIndex(HashMap<String, PriorityQueue<ArrayList<Integer>>> hMap, int k){
         int sum = 0;
         for(HashMap.Entry<String, PriorityQueue<ArrayList<Integer>>> hEntry: hMap.entrySet()){
@@ -199,55 +205,173 @@ public class Clusters {
         return sum;
     }
 
-    private static void arrangeOriginalList(int i, int j, HashMap<String, PriorityQueue<ArrayList<Integer>>> hMap, List<List<Object>> list, int k){
-       Map<String, PriorityQueue<ArrayList<Integer>>> sortedMap =
-        hMap.entrySet()
-            .stream()
-            .sorted(Comparator.comparingInt(e -> e.getValue().size()))
-            .collect(
-                LinkedHashMap::new,
-                (m, e) -> m.put(e.getKey(), e.getValue()),
-                LinkedHashMap::putAll
-            );
-            int temp1 = i;
-            int temp2 = j;
-            for(HashMap.Entry<String, PriorityQueue<ArrayList<Integer>>> hEntry: sortedMap.entrySet()){
-                String key = hEntry.getKey();
-                PriorityQueue<ArrayList<Integer>> pq = hEntry.getValue();
-                int pqsize = pq.size();
-                int rem = pqsize % k;
-                int normalCount = pqsize - rem;
-                while(normalCount > 0 && !pq.isEmpty()){
-                    StringTokenizer str = new StringTokenizer(key);
-                    ArrayList<Integer> al = pq.poll();
-                    for(int p=0; p < list.get(temp1).size(); p++){
-                        if(p == 0){
-                            list.get(temp1).set(p, al.get(0));
-                        }else if(p == 8){
-                            list.get(temp1).set(p, al.get(1));
-                        }else if(p == 10){
-                            list.get(temp1).set(p, al.get(2));
-                        }else{
-                            list.get(temp1).set(p, str.nextToken());
-                        }
-                    }
-                    temp1++;
-                    normalCount--;
-                }
-                while (!pq.isEmpty()) {
-    StringTokenizer str = new StringTokenizer(key);
-    ArrayList<Integer> al = pq.poll();
+   private static void arrangeOriginalList(
+        int i,
+        int j,
+        HashMap<String, PriorityQueue<ArrayList<Integer>>> hMap,
+        List<List<Object>> list,
+        int k
+) {
 
-    for (int p = 0; p < list.get(temp2).size(); p++) {
-        if (p == 0) list.get(temp2).set(p, al.get(0));
-        else if (p == 8) list.get(temp2).set(p, al.get(1));
-        else if (p == 10) list.get(temp2).set(p, al.get(2));
-        else list.get(temp2).set(p, str.nextToken());
+    Map<String, PriorityQueue<ArrayList<Integer>>> sortedMap =
+            hMap.entrySet()
+                    .stream()
+                    .sorted(Comparator.comparingInt(e -> e.getValue().size()))
+                    .collect(
+                            LinkedHashMap::new,
+                            (m, e) -> m.put(e.getKey(), e.getValue()),
+                            LinkedHashMap::putAll
+                    );
+
+    int writeNormal = i;
+    int writeOverflow = j;
+
+    for (Map.Entry<String, PriorityQueue<ArrayList<Integer>>> entry : sortedMap.entrySet()) {
+
+        String[] catValues = entry.getKey().split(DELIM, -1);
+        PriorityQueue<ArrayList<Integer>> pq = entry.getValue();
+
+        int size = pq.size();
+        int rem = size % k;
+        int normalCount = size - rem;
+
+        /* ---- normal k-blocks ---- */
+        while (normalCount-- > 0) {
+            writeRow(list.get(writeNormal++), catValues, pq.poll());
+        }
+
+        /* ---- overflow rows ---- */
+        while (!pq.isEmpty()) {
+            writeRow(list.get(writeOverflow++), catValues, pq.poll());
+        }
     }
-    temp2++;
 }
 
-            }
+private static void writeRow(
+        List<Object> row,
+        String[] catValues,
+        ArrayList<Integer> nums
+) {
+    row.set(AGE_COL, nums.get(0));
+    row.set(HOURS_COL, nums.get(1));
+    row.set(DIST_COL, nums.get(2));
+
+    for (int c = 0; c < CAT_COLS.length; c++) {
+        row.set(CAT_COLS[c], catValues[c]);
+    }
+}
+
+public static void generalizeNumericalAttributes(
+        List<List<Object>> table,
+        int k
+) {
+    for (int i = 0; i < table.size(); i += k) {
+
+        int end = Math.min(i + k, table.size());
+
+        int minAge = Integer.MAX_VALUE, maxAge = Integer.MIN_VALUE;
+        int minHours = Integer.MAX_VALUE, maxHours = Integer.MIN_VALUE;
+
+        for (int r = i; r < end; r++) {
+            int age = (int) table.get(r).get(AGE_COL);
+            int hrs = (int) table.get(r).get(HOURS_COL);
+
+            minAge = Math.min(minAge, age);
+            maxAge = Math.max(maxAge, age);
+            minHours = Math.min(minHours, hrs);
+            maxHours = Math.max(maxHours, hrs);
+        }
+
+        String ageRange = minAge + "-" + maxAge;
+        String hourRange = minHours + "-" + maxHours;
+
+        for (int r = i; r < end; r++) {
+            table.get(r).set(AGE_COL, ageRange);
+            table.get(r).set(HOURS_COL, hourRange);
+        }
+    }
+}
+
+public static void removeDistanceColumn(List<List<Object>> table) {
+    for (List<Object> row : table) {
+        row.remove(DIST_COL);
+    }
+}
+
+public static double numericalInformationLoss(
+        List<List<Object>> table,
+        int k,
+        int globalMinAge,
+        int globalMaxAge,
+        int globalMinHours,
+        int globalMaxHours
+) {
+    double loss = 0.0;
+
+    for (int i = 0; i < table.size(); i += k) {
+        int end = Math.min(i + k, table.size());
+
+        String[] ageRange = table.get(i).get(AGE_COL).toString().split("-");
+        String[] hourRange = table.get(i).get(HOURS_COL).toString().split("-");
+
+        int minAge = Integer.parseInt(ageRange[0]);
+        int maxAge = Integer.parseInt(ageRange[1]);
+        int minHr = Integer.parseInt(hourRange[0]);
+        int maxHr = Integer.parseInt(hourRange[1]);
+
+        double ageLoss =
+                (double)(maxAge - minAge) / (globalMaxAge - globalMinAge);
+        double hourLoss =
+                (double)(maxHr - minHr) / (globalMaxHours - globalMinHours);
+
+        loss += (ageLoss + hourLoss) * (end - i);
     }
 
+    return loss / table.size();
+}
+
+
+public static double categoricalInformationLoss(
+        List<List<Object>> table,
+        List<DGHNode> rootsList
+) {
+    double loss = 0.0;
+
+    for (List<Object> row : table) {
+        double rowLoss = 0.0;
+
+        for (int c = 0; c < CAT_COLS.length; c++) {
+            String val = row.get(CAT_COLS[c]).toString();
+            DGHNode root = rootsList.get(c);
+
+            DGHNode node = findNode(root, val);
+
+            int leafCountNode = countLeaves(node);
+            int leafCountRoot = countLeaves(root);
+
+            rowLoss += (double) leafCountNode / leafCountRoot;
+        }
+        loss += rowLoss / CAT_COLS.length;
+    }
+
+    return loss / table.size();
+}
+
+public static double totalInformationLoss(
+        double numericalLoss,
+        double categoricalLoss
+) {
+    return (numericalLoss + categoricalLoss) / 2.0;
+}
+private static int countLeaves(DGHNode node) {
+    if (node == null) return 0;
+    if (node.children.isEmpty()) return 1;
+
+    int count = 0;
+    for (DGHNode child : node.children) {
+        count += countLeaves(child);
+    }
+    return count;
+
+}
 }
